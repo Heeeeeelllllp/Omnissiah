@@ -1,0 +1,64 @@
+# --- Arbeitsbereich des Agenten -------------------------------------------
+# Alles, was der Servitor erzeugt – kann beliebige Inhalte enthalten.
+workspace/
+
+# --- Secrets & lokale Konfiguration ---------------------------------------
+.env
+.env.*
+!.env.example
+*.local.toml
+config.local.toml
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.token
+credentials*.json
+service-account*.json
+
+# --- Browser-Daten (Cookies, Sitzungen, Debug-Mitschnitte) ----------------
+# Können Google-Cookies und Sitzungsdaten enthalten.
+storage_state*.json
+cookies*.json
+browser_profile/
+user_data/
+playwright/.auth/
+*.har
+trace*.zip
+test-results/
+playwright-report/
+screenshots/
+debug/
+
+# --- Logs -----------------------------------------------------------------
+*.log
+logs/
+
+# --- Python ---------------------------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Editor & Betriebssystem ----------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# --- Claude Code: lokale, persönliche Einstellungen -----------------------
+.claude/settings.local.json

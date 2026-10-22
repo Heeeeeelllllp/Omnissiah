@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "servitor"
+version = "0.1.0"
+description = "Servitor MC-01 – ein einfacher Coding-Agent mit dem Google KI-Modus als Gehirn"
+requires-python = ">=3.11"
+dependencies = ["playwright>=1.40"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+include = ["servitor*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["workspace"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

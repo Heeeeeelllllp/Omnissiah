@@ -1,0 +1,14 @@
+[agent]
+max_schritte = 25           # harte Obergrenze, nicht entfernen
+max_fehler_in_folge = 3     # Abbruch nach so vielen Format-/Werkzeugnamen-Fehlern in Folge
+max_prompt_zeichen = 8000   # ältere Runden werden darüber hinaus gekürzt
+
+[browser]
+pause_sekunden = 5          # mindestens 5 s zwischen Anfragen (kleinere Werte werden angehoben)
+antwort_timeout = 90        # Gesamt-Timeout pro Antwort
+stabil_sekunden = 2         # Antwort gilt als fertig, wenn sie sich so lange nicht ändert
+captcha_wartezeit = 300     # nur mit --sichtbar: so lange wartet der Agent, bis du ein CAPTCHA löst
+
+[werkzeuge]
+workspace = "workspace"     # relativ zu dieser Datei
+befehl_timeout = 60
