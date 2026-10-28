@@ -140,3 +140,34 @@ def test_kuerze_verlauf_entfernt_notfalls_alte_runden() -> None:
 def test_kuerze_verlauf_kuerzt_notfalls_die_letzte_runde() -> None:
     gekuerzt = kuerze_verlauf(["x" * 5000], 200)
     assert len("\n\n".join(gekuerzt)) <= 200
+
+
+def test_fruehere_aufgaben_stehen_im_naechsten_prompt(werkzeuge: dict[str, Werkzeug]) -> None:
+    backend = FakeBackend([FERTIG, FERTIG])
+    agent = Agent(backend, werkzeuge, Config())
+    agent.ausfuehren("Schreib ein Hallo-Skript")
+    agent.ausfuehren("Mach es lauter")
+
+    assert "FRÜHERE AUFGABEN" not in backend.prompts[0]
+    assert "Schreib ein Hallo-Skript" in backend.prompts[1]
+    assert "Der Maschinengeist ist besänftigt." in backend.prompts[1]
+    assert "Mach es lauter" in backend.prompts[1]
+
+
+def test_vergessen_loescht_fruehere_aufgaben(werkzeuge: dict[str, Werkzeug]) -> None:
+    backend = FakeBackend([FERTIG, FERTIG])
+    agent = Agent(backend, werkzeuge, Config())
+    agent.ausfuehren("Alte Aufgabe")
+    agent.vergessen()
+    agent.ausfuehren("Neue Aufgabe")
+    assert "Alte Aufgabe" not in backend.prompts[1]
+
+
+def test_prompt_mit_frueheren_aufgaben_bleibt_unter_dem_limit(
+    werkzeuge: dict[str, Werkzeug],
+) -> None:
+    backend = FakeBackend([FERTIG] * 10)
+    agent = Agent(backend, werkzeuge, Config(max_prompt_zeichen=8000))
+    for _ in range(10):
+        agent.ausfuehren("x" * 2000)
+    assert all(len(p) <= 8000 for p in backend.prompts)

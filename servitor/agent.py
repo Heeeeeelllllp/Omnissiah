@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 KURZ_ZEICHEN = 300
 GEKUERZT = " […gekürzt]"
+MAX_FRUEHERE_AUFGABEN = 5
 
 
 class Status(Enum):
@@ -71,8 +72,19 @@ class Agent:
         self._systemprompt = systemprompt(werkzeuge.values(), ketzer=ketzer)
         self._beobachter = beobachter or Beobachter()
         self._verlauf: list[Runde] = []
+        self._fruehere: list[tuple[str, Ergebnis]] = []
 
     def ausfuehren(self, aufgabe: str) -> Ergebnis:
+        """Bearbeitet eine Aufgabe. Frühere Aufgaben dieser Sitzung stehen als Kontext im Prompt."""
+        ergebnis = self._bearbeite(aufgabe)
+        self._fruehere.append((aufgabe, ergebnis))
+        return ergebnis
+
+    def vergessen(self) -> None:
+        """Löscht den Kontext früherer Aufgaben (neues Gespräch)."""
+        self._fruehere = []
+
+    def _bearbeite(self, aufgabe: str) -> Ergebnis:
         self._verlauf = []
         fehler_in_folge = 0
         for schritt in range(1, self._config.max_schritte + 1):
@@ -120,12 +132,25 @@ class Agent:
         return werkzeug is not None
 
     def baue_prompt(self, aufgabe: str) -> str:
-        kopf = f"{self._systemprompt}\n\nAUFGABE\n{aufgabe}\n\nBISHERIGER VERLAUF\n"
+        kopf = (
+            f"{self._systemprompt}\n\n{self._fruehere_als_text()}"
+            f"AUFGABE\n{aufgabe}\n\nBISHERIGER VERLAUF\n"
+        )
         fuss = "\n\nDeine nächste Antwort (genau ein Block):"
         budget = self._config.max_prompt_zeichen - len(kopf) - len(fuss)
         runden = [r.als_text(i) for i, r in enumerate(self._verlauf, start=1)]
         verlauf = "\n\n".join(kuerze_verlauf(runden, budget)) or "(noch nichts)"
         return kopf + verlauf + fuss
+
+    def _fruehere_als_text(self) -> str:
+        if not self._fruehere:
+            return ""
+        eintraege = [
+            f"- Aufgabe: {_kuerze(aufgabe, KURZ_ZEICHEN)}\n"
+            f"  Ergebnis ({ergebnis.status.value}): {_kuerze(ergebnis.text, KURZ_ZEICHEN)}"
+            for aufgabe, ergebnis in self._fruehere[-MAX_FRUEHERE_AUFGABEN:]
+        ]
+        return "FRÜHERE AUFGABEN IN DIESER SITZUNG\n" + "\n".join(eintraege) + "\n\n"
 
 
 def kuerze_verlauf(runden: list[str], budget: int) -> list[str]:

@@ -190,6 +190,7 @@ pip install -e ".[dev]"
 playwright install chromium
 pytest                              # Tests (nur Fake-Backend)
 ruff check . && ruff format .       # Lint & Format
+python main.py                      # Chat-Modus (Aufgaben im Dialog)
 python main.py "Aufgabe hier"       # Servitor erwecken
 python main.py --sichtbar "Aufgabe" # mit Browserfenster
 python main.py --ketzer "Aufgabe"   # ohne Persona

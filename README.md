@@ -35,6 +35,7 @@ Python, etwa aus conda, bringt eine andere Playwright-Version mit und findet den
 installierten Browser nicht.
 
 ```bash
+python main.py                        # Chat-Modus: Aufgaben nacheinander eingeben
 python main.py "Schreib ein Skript, das alle Bilder in einem Ordner verkleinert"
 python main.py --sichtbar "Aufgabe"   # Browserfenster anzeigen und zuschauen
 python main.py --ketzer "Aufgabe"     # ohne Persona, neutraler Ton
@@ -50,6 +51,23 @@ python main.py --auto "Aufgabe"       # nur riskante Befehle bestätigen
 | `-v`            | Debug-Logging                                                   |
 
 Alle Dateien, die der Agent anlegt, landen in `workspace/`.
+
+### Chat-Modus
+
+Ohne Aufgabe startet der Servitor im Dialog. Der Browser bleibt zwischen den
+Aufgaben offen, und frühere Aufgaben samt Ergebnis (die letzten 5, gekürzt)
+stehen im Prompt. Deshalb funktionieren Folgeaufträge wie „Füg dem Skript
+noch eine Fortschrittsanzeige hinzu“.
+
+| Eingabe            | Wirkung                                  |
+|--------------------|------------------------------------------|
+| Text + Enter       | Neue Aufgabe                             |
+| `/neu`             | Kontext früherer Aufgaben vergessen      |
+| `/hilfe`           | Kurzhilfe                                |
+| `/ende`, Strg+D    | Beenden                                  |
+| Strg+C             | Laufende Aufgabe abbrechen               |
+
+Erkennt Google den Bot (CAPTCHA, das nicht gelöst wurde), endet der Chat.
 
 ### Beispielausgabe
 

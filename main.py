@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from servitor.agent import Agent, Beobachter, Ergebnis, Status
@@ -25,6 +26,16 @@ CAPTCHA_BITTE = (
     "Das Silizium darf es nicht – nur das Fleisch. Ich harre deiner. ++"
 )
 CAPTCHA_BITTE_NEUTRAL = "\nCAPTCHA erkannt – bitte im Browserfenster lösen. Der Agent wartet."
+
+CHAT_HILFE = (
+    "Aufgabe eingeben und Enter drücken. Befehle: /neu (Kontext vergessen), /hilfe, /ende.\n"
+    "Strg+C bricht die laufende Aufgabe ab, Strg+D beendet."
+)
+CHAT_GRUSS = "++ Sprich, Bittsteller. Der Servitor lauscht deinen Befehlen. ++"
+CHAT_ABSCHIED = "++ Der Servitor kehrt in den Ruhezustand zurück. Ave Omnissiah. ++"
+CHAT_VERGESSEN = "++ Die Erinnerungsspulen sind gereinigt. Ein neues Ritual beginnt. ++"
+CHAT_UNTERBROCHEN = "++ Der Fleischling unterbricht die Riten. Ich harre neuer Befehle. ++"
+ENDE_BEFEHLE = ("/ende", "/exit", "/quit")
 
 ABSCHLUSS = {
     Status.FERTIG: "++ Das Werk ist vollbracht. Der Maschinengeist ist besänftigt. ++",
@@ -77,7 +88,9 @@ def frage_nach(ketzer: bool) -> Bestaetigung:
 
 def lies_argumente(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Servitor MC-01 – ein einfacher Coding-Agent")
-    parser.add_argument("aufgabe", help="Was der Servitor tun soll")
+    parser.add_argument(
+        "aufgabe", nargs="?", help="Was der Servitor tun soll (ohne Angabe: Chat-Modus)"
+    )
     parser.add_argument("--sichtbar", action="store_true", help="Browser mit Fenster starten")
     parser.add_argument("--ketzer", action="store_true", help="Persona abschalten")
     parser.add_argument(
@@ -99,6 +112,40 @@ def zeige_ergebnis(ergebnis: Ergebnis, ketzer: bool) -> None:
     print(ergebnis.text)
 
 
+def chat(agent: Agent, ketzer: bool, eingabe: Callable[[str], str] = input) -> int:
+    """Nimmt Aufgaben im Dialog entgegen, bis der Nutzer /ende eingibt oder Strg+D drückt."""
+    print(CHAT_HILFE if ketzer else f"{CHAT_GRUSS}\n{CHAT_HILFE}")
+    while True:
+        try:
+            zeile = eingabe("\nDu> " if ketzer else "\nBittsteller> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not zeile:
+            continue
+        if zeile.lower() in ENDE_BEFEHLE:
+            break
+        if zeile.lower() == "/hilfe":
+            print(CHAT_HILFE)
+            continue
+        if zeile.lower() == "/neu":
+            agent.vergessen()
+            print("Kontext gelöscht." if ketzer else CHAT_VERGESSEN)
+            continue
+
+        try:
+            ergebnis = agent.ausfuehren(zeile)
+        except KeyboardInterrupt:
+            print("\nAbgebrochen." if ketzer else f"\n{CHAT_UNTERBROCHEN}")
+            continue
+        zeige_ergebnis(ergebnis, ketzer)
+        if ergebnis.status is Status.BLOCKIERT:
+            # Bei Bot-Erkennung nicht weiter anfragen (Spielregeln).
+            return 1
+    print("Beendet." if ketzer else CHAT_ABSCHIED)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = lies_argumente(argv)
     logging.basicConfig(
@@ -110,7 +157,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print(BANNER_NEUTRAL if args.ketzer else BANNER)
     if not args.ketzer:
-        print(f"Ich empfange die Aufgabe des Bittstellers: {args.aufgabe}")
+        if args.aufgabe:
+            print(f"Ich empfange die Aufgabe des Bittstellers: {args.aufgabe}")
         print(f"Heiliger Arbeitsbereich: {config.workspace}\n")
 
     werkzeuge = erzeuge_werkzeuge(
@@ -135,6 +183,8 @@ def main(argv: list[str] | None = None) -> int:
             agent = Agent(
                 backend, werkzeuge, config, ketzer=args.ketzer, beobachter=Konsole(args.ketzer)
             )
+            if args.aufgabe is None:
+                return chat(agent, args.ketzer)
             ergebnis = agent.ausfuehren(args.aufgabe)
     except KeyboardInterrupt:
         print("\nAbgebrochen." if args.ketzer else "\n++ Der Fleischling unterbricht die Riten. ++")
